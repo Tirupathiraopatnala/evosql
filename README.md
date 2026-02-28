@@ -85,7 +85,7 @@ The system:
 ---
 
 ## 📂 Project Structure
-
+```
 evosql/
 ├── agent.py
 ├── app.py
@@ -99,7 +99,7 @@ evosql/
 ├── schema_extractor.py
 ├── synapse_client.py
 └── validator.py
-
+```
 ---
 
 ## ⚙️ Setup Instructions
