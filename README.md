@@ -165,7 +165,7 @@ SYNAPSE_PASSWORD=your_password
 Run the application:
 
 ```bash
-streamlit run src/main.py
+streamlit run app.py
 ```
 
 Application will start at:
