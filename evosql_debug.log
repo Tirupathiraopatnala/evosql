@@ -1,0 +1,3247 @@
+======================================================================
+  EvoSQL-Lite Debug Log — 2026-02-28 13:16:49
+======================================================================
+
+[13:16:57.079] 🔍 DEBUG | fitness              | FitnessEvaluator created — fitness = execution_time (seconds)
+[13:16:57.079] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:16:57.087] 🔍 DEBUG | safety               | Required schemas: None
+[13:16:57.088] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:16:57.439] ℹ️  INFO  | safety               | SafetyGovernor.extract_schemas() called
+[13:16:57.439] 🔍 DEBUG | safety               | Raw regex matches (before filtering): ['ODS', 'ODS', 'OPS_0_MTA', 'OPS_4_DMT', 'OPS_0_MTA', 'OPS_4_DMT']
+[13:16:57.439] ℹ️  INFO  | safety               | extract_schemas() → ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:04.656] 🔍 DEBUG | genome               | Genome.random() → specialist=join_reorder_weight  values={'predicate_pushdown_bias': 0.124, 'shuffle_avoidance_bias': 0.176, 'broadcast_tolerance': 0.054, 'join_reorder_weight': 0.998, 'temp_table_materialization_bias': 0.227, 'aggregation_pushdown_bias': 0.34, 'index_exploitation_bias': 0.072, 'partition_elimination_bias': 0.296}
+[13:20:04.656] 🔍 DEBUG | agent                | Agent 12a24955 created | gen=1 | strategy=Join Optimizer | parents=none (random)
+[13:20:04.656] 🔍 DEBUG | genome               | Genome.random() → specialist=aggregation_pushdown_bias  values={'predicate_pushdown_bias': 0.134, 'shuffle_avoidance_bias': 0.088, 'broadcast_tolerance': 0.188, 'join_reorder_weight': 0.167, 'temp_table_materialization_bias': 0.3, 'aggregation_pushdown_bias': 0.842, 'index_exploitation_bias': 0.171, 'partition_elimination_bias': 0.043}
+[13:20:04.658] 🔍 DEBUG | agent                | Agent fd1b528a created | gen=1 | strategy=Aggregation Pusher | parents=none (random)
+[13:20:04.658] 🔍 DEBUG | genome               | Genome.random() → specialist=broadcast_tolerance  values={'predicate_pushdown_bias': 0.291, 'shuffle_avoidance_bias': 0.271, 'broadcast_tolerance': 0.965, 'join_reorder_weight': 0.278, 'temp_table_materialization_bias': 0.004, 'aggregation_pushdown_bias': 0.25, 'index_exploitation_bias': 0.088, 'partition_elimination_bias': 0.199}
+[13:20:04.659] 🔍 DEBUG | agent                | Agent b062e104 created | gen=1 | strategy=Broadcast User | parents=none (random)
+[13:20:04.660] 🔍 DEBUG | genome               | Genome.random() → specialist=broadcast_tolerance  values={'predicate_pushdown_bias': 0.3, 'shuffle_avoidance_bias': 0.195, 'broadcast_tolerance': 0.946, 'join_reorder_weight': 0.263, 'temp_table_materialization_bias': 0.249, 'aggregation_pushdown_bias': 0.272, 'index_exploitation_bias': 0.179, 'partition_elimination_bias': 0.041}
+[13:20:04.660] 🔍 DEBUG | agent                | Agent 306a81ed created | gen=1 | strategy=Broadcast User | parents=none (random)
+[13:20:04.660] 🔍 DEBUG | genome               | Genome.random() → specialist=partition_elimination_bias  values={'predicate_pushdown_bias': 0.121, 'shuffle_avoidance_bias': 0.306, 'broadcast_tolerance': 0.143, 'join_reorder_weight': 0.143, 'temp_table_materialization_bias': 0.311, 'aggregation_pushdown_bias': 0.277, 'index_exploitation_bias': 0.146, 'partition_elimination_bias': 0.754}
+[13:20:04.660] 🔍 DEBUG | agent                | Agent 7570caea created | gen=1 | strategy=Partition Eliminator | parents=none (random)
+[13:20:04.666] ℹ️  INFO  | agent                | [Agent 12a24955] generate_rewrite() START — strategy=Join Optimizer
+[13:20:04.666] 🔍 DEBUG | agent                | [Agent 12a24955] Genome values: {'predicate_pushdown_bias': 0.124, 'shuffle_avoidance_bias': 0.176, 'broadcast_tolerance': 0.054, 'join_reorder_weight': 0.998, 'temp_table_materialization_bias': 0.227, 'aggregation_pushdown_bias': 0.34, 'index_exploitation_bias': 0.072, 'partition_elimination_bias': 0.296}
+[13:20:04.666] 🔍 DEBUG | agent                | [Agent 12a24955] Instructions (2 items):
+[13:20:04.667] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:20:04.667] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:20:04.667] 🔍 DEBUG | agent                | [Agent 12a24955] Prompt built (3050 chars)
+[13:20:04.668] 🔍 DEBUG | agent                | [Agent 12a24955] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:20:04.676] ℹ️  INFO  | agent                | [Agent 12a24955] Calling OpenAI (model=gpt-4.1-mini, temp=0.3) …
+[13:20:09.142] ℹ️  INFO  | agent                | [Agent 12a24955] LLM responded in 4.47s
+[13:20:09.144] 🔍 DEBUG | agent                | [Agent 12a24955] Raw response (1287 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:20:09.144] 🔍 DEBUG | agent                | [Agent 12a24955] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:20:09.144] ℹ️  INFO  | agent                | [Agent 12a24955] generate_rewrite() SUCCESS
+[13:20:09.144] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:20:09.144] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:09.144] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:09.144] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:20:09.144] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:20:09.144] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:20:09.144] 🔍 DEBUG | safety               | Schema validation passed
+[13:20:09.144] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:20:09.157] ℹ️  INFO  | agent                | [Agent fd1b528a] generate_rewrite() START — strategy=Aggregation Pusher
+[13:20:09.158] 🔍 DEBUG | agent                | [Agent fd1b528a] Genome values: {'predicate_pushdown_bias': 0.134, 'shuffle_avoidance_bias': 0.088, 'broadcast_tolerance': 0.188, 'join_reorder_weight': 0.167, 'temp_table_materialization_bias': 0.3, 'aggregation_pushdown_bias': 0.842, 'index_exploitation_bias': 0.171, 'partition_elimination_bias': 0.043}
+[13:20:09.158] 🔍 DEBUG | agent                | [Agent fd1b528a] Instructions (2 items):
+[13:20:09.158] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Push aggregations (GROUP BY, SUM, COUNT) as close to base tables as possible
+[13:20:09.159] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:20:09.159] 🔍 DEBUG | agent                | [Agent fd1b528a] Prompt built (3071 chars)
+[13:20:09.160] 🔍 DEBUG | agent                | [Agent fd1b528a] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Push aggregations (GROUP BY, SUM, COUNT) as close to base tables as possible
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:20:09.166] ℹ️  INFO  | agent                | [Agent fd1b528a] Calling OpenAI (model=gpt-4.1-mini, temp=0.3) …
+[13:20:12.712] ℹ️  INFO  | agent                | [Agent fd1b528a] LLM responded in 3.55s
+[13:20:12.712] 🔍 DEBUG | agent                | [Agent fd1b528a] Raw response (1341 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    CROSS JOIN (
+        SELECT Param2
+        FROM OPS_0_MTA.CTRL_TABLE
+        WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+          AND ISACTIVE = 'TRUE'
+    ) AS CTRL
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CTRL.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CTRL.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:20:12.715] 🔍 DEBUG | agent                | [Agent fd1b528a] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    CROSS JOIN (
+        SELECT Param2
+        FROM OPS_0_MTA.CTRL_TABLE
+        WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+          AND ISACTIVE = 'TRUE'
+    ) AS CTRL
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CTRL.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CTRL.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:20:12.718] ℹ️  INFO  | agent                | [Agent fd1b528a] generate_rewrite() SUCCESS
+[13:20:12.719] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:20:12.719] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:12.720] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:12.720] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:20:12.721] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:20:12.721] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:20:12.721] 🔍 DEBUG | safety               | Schema validation passed
+[13:20:12.722] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:20:12.736] ℹ️  INFO  | agent                | [Agent b062e104] generate_rewrite() START — strategy=Broadcast User
+[13:20:12.737] 🔍 DEBUG | agent                | [Agent b062e104] Genome values: {'predicate_pushdown_bias': 0.291, 'shuffle_avoidance_bias': 0.271, 'broadcast_tolerance': 0.965, 'join_reorder_weight': 0.278, 'temp_table_materialization_bias': 0.004, 'aggregation_pushdown_bias': 0.25, 'index_exploitation_bias': 0.088, 'partition_elimination_bias': 0.199}
+[13:20:12.737] 🔍 DEBUG | agent                | [Agent b062e104] Instructions (1 items):
+[13:20:12.738] 🔍 DEBUG | agent                |   1. ✅ ALLOWED: Use REPLICATE hints for small dimension tables (< 10GB)
+[13:20:12.738] 🔍 DEBUG | agent                | [Agent b062e104] Prompt built (2976 chars)
+[13:20:12.739] 🔍 DEBUG | agent                | [Agent b062e104] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. ✅ ALLOWED: Use REPLICATE hints for small dimension tables (< 10GB)
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:20:12.749] ℹ️  INFO  | agent                | [Agent b062e104] Calling OpenAI (model=gpt-4.1-mini, temp=0.3) …
+[13:20:17.365] ℹ️  INFO  | agent                | [Agent b062e104] LLM responded in 4.62s
+[13:20:17.365] 🔍 DEBUG | agent                | [Agent b062e104] Raw response (1550 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT /*+ REPLICATE */ Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT /*+ REPLICATE */ DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:17.365] 🔍 DEBUG | agent                | [Agent b062e104] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT /*+ REPLICATE */ Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT /*+ REPLICATE */ DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:17.365] ℹ️  INFO  | agent                | [Agent b062e104] generate_rewrite() SUCCESS
+[13:20:17.365] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:20:17.373] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:17.373] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:17.373] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:20:17.373] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:20:17.373] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:20:17.373] 🔍 DEBUG | safety               | Schema validation passed
+[13:20:17.373] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:20:17.386] ℹ️  INFO  | agent                | [Agent 306a81ed] generate_rewrite() START — strategy=Broadcast User
+[13:20:17.386] 🔍 DEBUG | agent                | [Agent 306a81ed] Genome values: {'predicate_pushdown_bias': 0.3, 'shuffle_avoidance_bias': 0.195, 'broadcast_tolerance': 0.946, 'join_reorder_weight': 0.263, 'temp_table_materialization_bias': 0.249, 'aggregation_pushdown_bias': 0.272, 'index_exploitation_bias': 0.179, 'partition_elimination_bias': 0.041}
+[13:20:17.387] 🔍 DEBUG | agent                | [Agent 306a81ed] Instructions (1 items):
+[13:20:17.387] 🔍 DEBUG | agent                |   1. ✅ ALLOWED: Use REPLICATE hints for small dimension tables (< 10GB)
+[13:20:17.387] 🔍 DEBUG | agent                | [Agent 306a81ed] Prompt built (2976 chars)
+[13:20:17.388] 🔍 DEBUG | agent                | [Agent 306a81ed] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. ✅ ALLOWED: Use REPLICATE hints for small dimension tables (< 10GB)
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:20:17.393] ℹ️  INFO  | agent                | [Agent 306a81ed] Calling OpenAI (model=gpt-4.1-mini, temp=0.3) …
+[13:20:22.360] ℹ️  INFO  | agent                | [Agent 306a81ed] LLM responded in 4.97s
+[13:20:22.360] 🔍 DEBUG | agent                | [Agent 306a81ed] Raw response (1584 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    INNER JOIN OPS_0_MTA.CTRL_TABLE WITH (REPLICATE)
+        ON 1=1
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:22.360] 🔍 DEBUG | agent                | [Agent 306a81ed] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    INNER JOIN OPS_0_MTA.CTRL_TABLE WITH (REPLICATE)
+        ON 1=1
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:22.360] ℹ️  INFO  | agent                | [Agent 306a81ed] generate_rewrite() SUCCESS
+[13:20:22.360] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:20:22.367] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:22.368] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:22.368] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:20:22.368] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:20:22.369] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:20:22.369] 🔍 DEBUG | safety               | Schema validation passed
+[13:20:22.369] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:20:22.384] ℹ️  INFO  | agent                | [Agent 7570caea] generate_rewrite() START — strategy=Partition Eliminator
+[13:20:22.384] 🔍 DEBUG | agent                | [Agent 7570caea] Genome values: {'predicate_pushdown_bias': 0.121, 'shuffle_avoidance_bias': 0.306, 'broadcast_tolerance': 0.143, 'join_reorder_weight': 0.143, 'temp_table_materialization_bias': 0.311, 'aggregation_pushdown_bias': 0.277, 'index_exploitation_bias': 0.146, 'partition_elimination_bias': 0.754}
+[13:20:22.385] 🔍 DEBUG | agent                | [Agent 7570caea] Instructions (2 items):
+[13:20:22.385] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Add partition column filters to enable partition elimination
+[13:20:22.385] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:20:22.386] 🔍 DEBUG | agent                | [Agent 7570caea] Prompt built (3055 chars)
+[13:20:22.386] 🔍 DEBUG | agent                | [Agent 7570caea] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Add partition column filters to enable partition elimination
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:20:22.391] ℹ️  INFO  | agent                | [Agent 7570caea] Calling OpenAI (model=gpt-4.1-mini, temp=0.3) …
+[13:20:25.663] ℹ️  INFO  | agent                | [Agent 7570caea] LLM responded in 3.27s
+[13:20:25.663] 🔍 DEBUG | agent                | [Agent 7570caea] Raw response (1407 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    CROSS JOIN (
+        SELECT Param2
+        FROM OPS_0_MTA.CTRL_TABLE
+        WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+          AND ISACTIVE = 'TRUE'
+    ) AS CTRL
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CTRL.Param2
+      )
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CTRL.Param2)
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:25.663] 🔍 DEBUG | agent                | [Agent 7570caea] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    CROSS JOIN (
+        SELECT Param2
+        FROM OPS_0_MTA.CTRL_TABLE
+        WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+          AND ISACTIVE = 'TRUE'
+    ) AS CTRL
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CTRL.Param2
+      )
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CTRL.Param2)
+      )
+)
+SELECT *
+FROM PrepareData;
+[13:20:25.671] ℹ️  INFO  | agent                | [Agent 7570caea] generate_rewrite() SUCCESS
+[13:20:25.671] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:20:25.671] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:25.673] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:20:25.673] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:20:25.673] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:20:25.673] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:20:25.674] 🔍 DEBUG | safety               | Schema validation passed
+[13:20:25.674] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:23:07.657] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:23:07.665] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:23:07.665] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:23:07.665] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:23:07.665] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:23:08.686] 🔍 DEBUG | fitness              | compute() → 108.330s
+[13:23:08.686] 🔍 DEBUG | agent                | [Agent 12a24955] actual_fitness = 108.330s
+[13:23:08.688] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=108.33s  → 19.46%
+[13:26:10.758] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:26:10.758] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:26:10.758] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:26:10.759] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:26:10.759] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:26:11.818] 🔍 DEBUG | fitness              | compute() → 131.876s
+[13:26:11.818] 🔍 DEBUG | agent                | [Agent fd1b528a] actual_fitness = 131.876s
+[13:26:11.819] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=131.88s  → 1.96%
+[13:29:38.383] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:29:38.383] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:29:38.384] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:29:38.384] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:29:38.384] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:29:39.430] 🔍 DEBUG | fitness              | compute() → 144.699s
+[13:29:39.431] 🔍 DEBUG | agent                | [Agent b062e104] actual_fitness = 144.699s
+[13:29:39.431] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=144.70s  → -7.58%
+[13:29:40.293] 🔍 DEBUG | fitness              | penalize() → 99999.0
+[13:29:40.293] 🔍 DEBUG | agent                | [Agent 306a81ed] actual_fitness = 99999.000s
+[13:32:31.670] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:32:31.670] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:32:31.671] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:32:31.671] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:32:31.672] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:32:32.764] 🔍 DEBUG | fitness              | compute() → 124.986s
+[13:32:32.765] 🔍 DEBUG | agent                | [Agent 7570caea] actual_fitness = 124.986s
+[13:32:32.766] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=124.99s  → 7.08%
+[13:32:32.792] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=108.33s  → 19.46%
+[13:32:33.092] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=108.33s  → 19.46%
+[13:32:33.100] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=0.998  p1=Join Optimizer  p2=Partition Eliminator
+[13:32:33.102] 🔍 DEBUG | genome               | Genome.mutate() changes: {'shuffle_avoidance_bias': '0.264 → 0.353', 'broadcast_tolerance': '0.079 → 0.161', 'join_reorder_weight': '0.998 → 0.938', 'temp_table_materialization_bias': '0.244 → 0.338', 'aggregation_pushdown_bias': '0.331 → 0.267', 'partition_elimination_bias': '0.458 → 0.362'}  exploration=None
+[13:32:33.103] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[13:32:33.104] 🔍 DEBUG | agent                | Agent a91df6b3 created | gen=2 | strategy=Join Optimizer | parents=['12a24955', '7570caea']
+[13:32:33.105] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=0.998  p1=Join Optimizer  p2=Partition Eliminator
+[13:32:33.107] 🔍 DEBUG | genome               | Genome.mutate() changes: {'predicate_pushdown_bias': '0.121 → 0.060', 'shuffle_avoidance_bias': '0.221 → 0.304', 'broadcast_tolerance': '0.067 → 0.000', 'temp_table_materialization_bias': '0.308 → 0.214', 'aggregation_pushdown_bias': '0.313 → 0.399', 'index_exploitation_bias': '0.095 → 0.030'}  exploration=None
+[13:32:33.108] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[13:32:33.109] 🔍 DEBUG | agent                | Agent 1e161ade created | gen=2 | strategy=Join Optimizer | parents=['12a24955', '7570caea']
+[13:32:33.110] 🔍 DEBUG | genome               | Genome.random() → specialist=shuffle_avoidance_bias  values={'predicate_pushdown_bias': 0.096, 'shuffle_avoidance_bias': 0.765, 'broadcast_tolerance': 0.097, 'join_reorder_weight': 0.102, 'temp_table_materialization_bias': 0.193, 'aggregation_pushdown_bias': 0.334, 'index_exploitation_bias': 0.266, 'partition_elimination_bias': 0.241}
+[13:32:33.111] 🔍 DEBUG | agent                | Agent e701cccc created | gen=2 | strategy=Shuffle Avoider | parents=none (random)
+[13:32:33.131] ℹ️  INFO  | agent                | [Agent a91df6b3] generate_rewrite() START — strategy=Join Optimizer
+[13:32:33.132] 🔍 DEBUG | agent                | [Agent a91df6b3] Genome values: {'predicate_pushdown_bias': 0.133, 'shuffle_avoidance_bias': 0.353, 'broadcast_tolerance': 0.161, 'join_reorder_weight': 0.938, 'temp_table_materialization_bias': 0.338, 'aggregation_pushdown_bias': 0.267, 'index_exploitation_bias': 0.038, 'partition_elimination_bias': 0.362}
+[13:32:33.133] 🔍 DEBUG | agent                | [Agent a91df6b3] Instructions (2 items):
+[13:32:33.134] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:32:33.135] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:32:33.135] ℹ️  INFO  | agent                | [Agent a91df6b3] generation_context provided — feedback loop active
+[13:32:33.136] 🔍 DEBUG | agent                | [Agent a91df6b3] Prompt built (5165 chars)
+[13:32:33.137] 🔍 DEBUG | agent                | [Agent a91df6b3] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +19.46% improvement (108.33s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+    - SELECT Param2
+    - FROM OPS_0_MTA.CTRL_TABLE
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    + AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+    + AND CT.ISACTIVE = 'TRUE'
+❌ These approaches did NOT help — avoid repeating them:
+  - Broadcast User (made query slower: 144.7s)
+  - Broadcast User (EXECUTION_FAILED)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:32:33.158] ℹ️  INFO  | agent                | [Agent a91df6b3] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:32:36.921] ℹ️  INFO  | agent                | [Agent a91df6b3] LLM responded in 3.76s
+[13:32:36.921] 🔍 DEBUG | agent                | [Agent a91df6b3] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:32:36.923] 🔍 DEBUG | agent                | [Agent a91df6b3] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:32:36.924] ℹ️  INFO  | agent                | [Agent a91df6b3] generate_rewrite() SUCCESS
+[13:32:36.925] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:32:36.925] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:36.926] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:36.926] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:32:36.926] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:32:36.926] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:32:36.927] 🔍 DEBUG | safety               | Schema validation passed
+[13:32:36.927] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:32:36.935] ℹ️  INFO  | agent                | [Agent 1e161ade] generate_rewrite() START — strategy=Join Optimizer
+[13:32:36.935] 🔍 DEBUG | agent                | [Agent 1e161ade] Genome values: {'predicate_pushdown_bias': 0.06, 'shuffle_avoidance_bias': 0.304, 'broadcast_tolerance': 0.0, 'join_reorder_weight': 1.0, 'temp_table_materialization_bias': 0.214, 'aggregation_pushdown_bias': 0.399, 'index_exploitation_bias': 0.03, 'partition_elimination_bias': 0.417}
+[13:32:36.935] 🔍 DEBUG | agent                | [Agent 1e161ade] Instructions (3 items):
+[13:32:36.936] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:32:36.936] 🔍 DEBUG | agent                |   2. ⚖️ MODERATE: Look for partition elimination opportunities
+[13:32:36.937] 🔍 DEBUG | agent                |   3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:32:36.937] ℹ️  INFO  | agent                | [Agent 1e161ade] generation_context provided — feedback loop active
+[13:32:36.938] 🔍 DEBUG | agent                | [Agent 1e161ade] Prompt built (5226 chars)
+[13:32:36.938] 🔍 DEBUG | agent                | [Agent 1e161ade] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +19.46% improvement (108.33s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+    - SELECT Param2
+    - FROM OPS_0_MTA.CTRL_TABLE
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    + AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+    + AND CT.ISACTIVE = 'TRUE'
+❌ These approaches did NOT help — avoid repeating them:
+  - Broadcast User (made query slower: 144.7s)
+  - Broadcast User (EXECUTION_FAILED)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. ⚖️ MODERATE: Look for partition elimination opportunities
+3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:32:36.947] ℹ️  INFO  | agent                | [Agent 1e161ade] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:32:40.294] ℹ️  INFO  | agent                | [Agent 1e161ade] LLM responded in 3.35s
+[13:32:40.294] 🔍 DEBUG | agent                | [Agent 1e161ade] Raw response (1286 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (
+            (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+            AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+        )
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+)
+SELECT *
+FROM PrepareData;
+[13:32:40.296] 🔍 DEBUG | agent                | [Agent 1e161ade] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (
+            (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+            AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+        )
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+)
+SELECT *
+FROM PrepareData;
+[13:32:40.297] ℹ️  INFO  | agent                | [Agent 1e161ade] generate_rewrite() SUCCESS
+[13:32:40.298] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:32:40.298] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:40.298] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:40.299] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:32:40.299] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:32:40.299] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:32:40.299] 🔍 DEBUG | safety               | Schema validation passed
+[13:32:40.299] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:32:40.306] ℹ️  INFO  | agent                | [Agent e701cccc] generate_rewrite() START — strategy=Shuffle Avoider
+[13:32:40.307] 🔍 DEBUG | agent                | [Agent e701cccc] Genome values: {'predicate_pushdown_bias': 0.096, 'shuffle_avoidance_bias': 0.765, 'broadcast_tolerance': 0.097, 'join_reorder_weight': 0.102, 'temp_table_materialization_bias': 0.193, 'aggregation_pushdown_bias': 0.334, 'index_exploitation_bias': 0.266, 'partition_elimination_bias': 0.241}
+[13:32:40.307] 🔍 DEBUG | agent                | [Agent e701cccc] Instructions (2 items):
+[13:32:40.308] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Minimize data movement — avoid unnecessary shuffles, align joins with distribution keys
+[13:32:40.308] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:32:40.309] ℹ️  INFO  | agent                | [Agent e701cccc] generation_context provided — feedback loop active
+[13:32:40.309] 🔍 DEBUG | agent                | [Agent e701cccc] Prompt built (5197 chars)
+[13:32:40.310] 🔍 DEBUG | agent                | [Agent e701cccc] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +19.46% improvement (108.33s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+    - SELECT Param2
+    - FROM OPS_0_MTA.CTRL_TABLE
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    + AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+    + AND CT.ISACTIVE = 'TRUE'
+❌ These approaches did NOT help — avoid repeating them:
+  - Broadcast User (made query slower: 144.7s)
+  - Broadcast User (EXECUTION_FAILED)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Minimize data movement — avoid unnecessary shuffles, align joins with distribution keys
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:32:40.319] ℹ️  INFO  | agent                | [Agent e701cccc] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:32:43.660] ℹ️  INFO  | agent                | [Agent e701cccc] LLM responded in 3.34s
+[13:32:43.660] 🔍 DEBUG | agent                | [Agent e701cccc] Raw response (1309 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON 1 = 1
+    INNER HASH JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:32:43.663] 🔍 DEBUG | agent                | [Agent e701cccc] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON 1 = 1
+    INNER HASH JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:32:43.666] ℹ️  INFO  | agent                | [Agent e701cccc] generate_rewrite() SUCCESS
+[13:32:43.666] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:32:43.667] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:43.667] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:43.668] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:32:43.668] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:32:43.668] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:32:43.669] 🔍 DEBUG | safety               | Schema validation passed
+[13:32:43.669] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:32:43.679] ℹ️  INFO  | agent                | [Agent 12a24955] generate_rewrite() START — strategy=Join Optimizer
+[13:32:43.680] 🔍 DEBUG | agent                | [Agent 12a24955] Genome values: {'predicate_pushdown_bias': 0.124, 'shuffle_avoidance_bias': 0.176, 'broadcast_tolerance': 0.054, 'join_reorder_weight': 0.998, 'temp_table_materialization_bias': 0.227, 'aggregation_pushdown_bias': 0.34, 'index_exploitation_bias': 0.072, 'partition_elimination_bias': 0.296}
+[13:32:43.681] 🔍 DEBUG | agent                | [Agent 12a24955] Instructions (2 items):
+[13:32:43.681] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:32:43.681] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:32:43.682] ℹ️  INFO  | agent                | [Agent 12a24955] generation_context provided — feedback loop active
+[13:32:43.682] 🔍 DEBUG | agent                | [Agent 12a24955] Prompt built (5165 chars)
+[13:32:43.683] 🔍 DEBUG | agent                | [Agent 12a24955] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +19.46% improvement (108.33s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+    - SELECT Param2
+    - FROM OPS_0_MTA.CTRL_TABLE
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    + AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+    + AND CT.ISACTIVE = 'TRUE'
+❌ These approaches did NOT help — avoid repeating them:
+  - Broadcast User (made query slower: 144.7s)
+  - Broadcast User (EXECUTION_FAILED)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:32:43.703] ℹ️  INFO  | agent                | [Agent 12a24955] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:32:47.404] ℹ️  INFO  | agent                | [Agent 12a24955] LLM responded in 3.70s
+[13:32:47.404] 🔍 DEBUG | agent                | [Agent 12a24955] Raw response (1261 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+       AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+       AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+       AND CT.ISACTIVE = 'TRUE'
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+       AND MI.[table] = 'sn_customerservice_case'
+       AND MI.[field] = 'state'
+)
+SELECT *
+FROM PrepareData;
+[13:32:47.411] 🔍 DEBUG | agent                | [Agent 12a24955] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+       AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+       AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+       AND CT.ISACTIVE = 'TRUE'
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+       AND MI.[table] = 'sn_customerservice_case'
+       AND MI.[field] = 'state'
+)
+SELECT *
+FROM PrepareData;
+[13:32:47.419] ℹ️  INFO  | agent                | [Agent 12a24955] generate_rewrite() SUCCESS
+[13:32:47.419] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:32:47.420] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:47.421] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:47.423] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:32:47.424] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:32:47.425] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:32:47.425] 🔍 DEBUG | safety               | Schema validation passed
+[13:32:47.427] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:32:47.453] ℹ️  INFO  | agent                | [Agent 7570caea] generate_rewrite() START — strategy=Partition Eliminator
+[13:32:47.454] 🔍 DEBUG | agent                | [Agent 7570caea] Genome values: {'predicate_pushdown_bias': 0.121, 'shuffle_avoidance_bias': 0.306, 'broadcast_tolerance': 0.143, 'join_reorder_weight': 0.143, 'temp_table_materialization_bias': 0.311, 'aggregation_pushdown_bias': 0.277, 'index_exploitation_bias': 0.146, 'partition_elimination_bias': 0.754}
+[13:32:47.455] 🔍 DEBUG | agent                | [Agent 7570caea] Instructions (2 items):
+[13:32:47.456] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Add partition column filters to enable partition elimination
+[13:32:47.457] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:32:47.459] ℹ️  INFO  | agent                | [Agent 7570caea] generation_context provided — feedback loop active
+[13:32:47.460] 🔍 DEBUG | agent                | [Agent 7570caea] Prompt built (5170 chars)
+[13:32:47.460] 🔍 DEBUG | agent                | [Agent 7570caea] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +19.46% improvement (108.33s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+    - SELECT Param2
+    - FROM OPS_0_MTA.CTRL_TABLE
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    + AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+    + AND CT.ISACTIVE = 'TRUE'
+❌ These approaches did NOT help — avoid repeating them:
+  - Broadcast User (made query slower: 144.7s)
+  - Broadcast User (EXECUTION_FAILED)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Add partition column filters to enable partition elimination
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:32:47.487] ℹ️  INFO  | agent                | [Agent 7570caea] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:32:51.172] ℹ️  INFO  | agent                | [Agent 7570caea] LLM responded in 3.68s
+[13:32:51.173] 🔍 DEBUG | agent                | [Agent 7570caea] Raw response (1373 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+      AND MI.[start] >= CT.Param2
+      AND MI.[start] < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:32:51.176] 🔍 DEBUG | agent                | [Agent 7570caea] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    CROSS JOIN ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+      AND MI.[start] >= CT.Param2
+      AND MI.[start] < DATEADD(YEAR, 10, CT.Param2)
+)
+SELECT *
+FROM PrepareData;
+[13:32:51.180] ℹ️  INFO  | agent                | [Agent 7570caea] generate_rewrite() SUCCESS
+[13:32:51.180] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:32:51.180] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:51.181] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:32:51.182] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:32:51.182] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:32:51.182] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:32:51.183] 🔍 DEBUG | safety               | Schema validation passed
+[13:32:51.183] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:36:03.337] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:36:03.338] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:36:03.338] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:36:03.338] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:36:03.338] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:36:06.446] 🔍 DEBUG | fitness              | compute() → 113.574s
+[13:36:06.446] 🔍 DEBUG | agent                | [Agent a91df6b3] actual_fitness = 113.574s
+[13:36:06.446] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=113.57s  → 15.56%
+[13:39:47.736] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:39:47.747] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:39:47.749] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:39:47.750] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:39:47.750] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:39:50.891] 🔍 DEBUG | fitness              | compute() → 143.653s
+[13:39:50.892] 🔍 DEBUG | agent                | [Agent 1e161ade] actual_fitness = 143.653s
+[13:39:50.893] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=143.65s  → -6.80%
+[13:39:51.763] 🔍 DEBUG | fitness              | penalize() → 99999.0
+[13:39:51.763] 🔍 DEBUG | agent                | [Agent e701cccc] actual_fitness = 99999.000s
+[13:43:52.719] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:43:52.720] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:43:52.722] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:43:52.722] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:43:52.723] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:43:55.786] 🔍 DEBUG | fitness              | compute() → 153.396s
+[13:43:55.786] 🔍 DEBUG | agent                | [Agent 12a24955] actual_fitness = 153.396s
+[13:43:55.787] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=153.40s  → -14.04%
+[13:49:13.303] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:49:13.305] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:49:13.306] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:49:13.306] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:49:13.306] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:49:16.230] 🔍 DEBUG | fitness              | compute() → 233.785s
+[13:49:16.245] 🔍 DEBUG | agent                | [Agent 7570caea] actual_fitness = 233.785s
+[13:49:16.246] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=233.79s  → -73.81%
+[13:49:16.261] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=113.57s  → 15.56%
+[13:49:16.383] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=113.57s  → 15.56%
+[13:49:16.398] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=1.000  p1=Join Optimizer  p2=Join Optimizer
+[13:49:16.415] 🔍 DEBUG | genome               | Genome.mutate() changes: {'shuffle_avoidance_bias': '0.322 → 0.228', 'broadcast_tolerance': '0.102 → 0.050', 'aggregation_pushdown_bias': '0.397 → 0.340', 'index_exploitation_bias': '0.035 → 0.119'}  exploration=None
+[13:49:16.416] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[13:49:16.419] 🔍 DEBUG | agent                | Agent e894e694 created | gen=3 | strategy=Join Optimizer | parents=['a91df6b3', '1e161ade']
+[13:49:16.419] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=1.000  p1=Join Optimizer  p2=Join Optimizer
+[13:49:16.419] 🔍 DEBUG | genome               | Genome.mutate() changes: {}  exploration=None
+[13:49:16.422] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[13:49:16.422] 🔍 DEBUG | agent                | Agent 9e08d1d9 created | gen=3 | strategy=Join Optimizer | parents=['a91df6b3', '1e161ade']
+[13:49:16.425] 🔍 DEBUG | genome               | Genome.random() → specialist=join_reorder_weight  values={'predicate_pushdown_bias': 0.305, 'shuffle_avoidance_bias': 0.074, 'broadcast_tolerance': 0.289, 'join_reorder_weight': 0.793, 'temp_table_materialization_bias': 0.22, 'aggregation_pushdown_bias': 0.036, 'index_exploitation_bias': 0.272, 'partition_elimination_bias': 0.277}
+[13:49:16.425] 🔍 DEBUG | agent                | Agent 098a0f38 created | gen=3 | strategy=Join Optimizer | parents=none (random)
+[13:49:16.434] ℹ️  INFO  | agent                | [Agent e894e694] generate_rewrite() START — strategy=Join Optimizer
+[13:49:16.434] 🔍 DEBUG | agent                | [Agent e894e694] Genome values: {'predicate_pushdown_bias': 0.043, 'shuffle_avoidance_bias': 0.228, 'broadcast_tolerance': 0.05, 'join_reorder_weight': 0.999, 'temp_table_materialization_bias': 0.171, 'aggregation_pushdown_bias': 0.34, 'index_exploitation_bias': 0.119, 'partition_elimination_bias': 0.441}
+[13:49:16.434] 🔍 DEBUG | agent                | [Agent e894e694] Instructions (3 items):
+[13:49:16.434] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:49:16.437] 🔍 DEBUG | agent                |   2. ⚖️ MODERATE: Look for partition elimination opportunities
+[13:49:16.438] 🔍 DEBUG | agent                |   3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:49:16.438] ℹ️  INFO  | agent                | [Agent e894e694] generation_context provided — feedback loop active
+[13:49:16.438] 🔍 DEBUG | agent                | [Agent e894e694] Prompt built (5368 chars)
+[13:49:16.439] 🔍 DEBUG | agent                | [Agent e894e694] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +15.56% improvement (113.57s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - WHERE MI.[table] = 'sn_customerservice_case'
+    - AND MI.[field] = 'state'
+    - AND (
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+    + AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    + INNER JOIN ODS.SN_METRIC_INSTANCE MI
+❌ These approaches did NOT help — avoid repeating them:
+  - Join Optimizer (made query slower: 143.7s)
+  - Shuffle Avoider (EXECUTION_FAILED)
+  - Partition Eliminator (made query slower: 233.8s)
+  - Join Optimizer (made query slower: 153.4s)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. ⚖️ MODERATE: Look for partition elimination opportunities
+3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:49:16.451] ℹ️  INFO  | agent                | [Agent e894e694] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:49:20.100] ℹ️  INFO  | agent                | [Agent e894e694] LLM responded in 3.65s
+[13:49:20.100] 🔍 DEBUG | agent                | [Agent e894e694] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:20.116] 🔍 DEBUG | agent                | [Agent e894e694] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:20.116] ℹ️  INFO  | agent                | [Agent e894e694] generate_rewrite() SUCCESS
+[13:49:20.116] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:49:20.116] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:20.122] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:20.122] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:49:20.122] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:49:20.123] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:49:20.123] 🔍 DEBUG | safety               | Schema validation passed
+[13:49:20.123] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:49:20.129] ℹ️  INFO  | agent                | [Agent 9e08d1d9] generate_rewrite() START — strategy=Join Optimizer
+[13:49:20.130] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Genome values: {'predicate_pushdown_bias': 0.075, 'shuffle_avoidance_bias': 0.34, 'broadcast_tolerance': 0.0, 'join_reorder_weight': 0.981, 'temp_table_materialization_bias': 0.258, 'aggregation_pushdown_bias': 0.265, 'index_exploitation_bias': 0.0, 'partition_elimination_bias': 0.404}
+[13:49:20.131] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Instructions (3 items):
+[13:49:20.131] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:49:20.131] 🔍 DEBUG | agent                |   2. ⚖️ MODERATE: Look for partition elimination opportunities
+[13:49:20.132] 🔍 DEBUG | agent                |   3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:49:20.132] ℹ️  INFO  | agent                | [Agent 9e08d1d9] generation_context provided — feedback loop active
+[13:49:20.133] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Prompt built (5368 chars)
+[13:49:20.133] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +15.56% improvement (113.57s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - WHERE MI.[table] = 'sn_customerservice_case'
+    - AND MI.[field] = 'state'
+    - AND (
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+    + AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    + INNER JOIN ODS.SN_METRIC_INSTANCE MI
+❌ These approaches did NOT help — avoid repeating them:
+  - Join Optimizer (made query slower: 143.7s)
+  - Shuffle Avoider (EXECUTION_FAILED)
+  - Partition Eliminator (made query slower: 233.8s)
+  - Join Optimizer (made query slower: 153.4s)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. ⚖️ MODERATE: Look for partition elimination opportunities
+3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:49:20.142] ℹ️  INFO  | agent                | [Agent 9e08d1d9] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:49:23.305] ℹ️  INFO  | agent                | [Agent 9e08d1d9] LLM responded in 3.16s
+[13:49:23.305] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:23.307] 🔍 DEBUG | agent                | [Agent 9e08d1d9] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:23.309] ℹ️  INFO  | agent                | [Agent 9e08d1d9] generate_rewrite() SUCCESS
+[13:49:23.310] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:49:23.310] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:23.311] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:23.311] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:49:23.312] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:49:23.312] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:49:23.312] 🔍 DEBUG | safety               | Schema validation passed
+[13:49:23.312] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:49:23.320] ℹ️  INFO  | agent                | [Agent 098a0f38] generate_rewrite() START — strategy=Join Optimizer
+[13:49:23.320] 🔍 DEBUG | agent                | [Agent 098a0f38] Genome values: {'predicate_pushdown_bias': 0.305, 'shuffle_avoidance_bias': 0.074, 'broadcast_tolerance': 0.289, 'join_reorder_weight': 0.793, 'temp_table_materialization_bias': 0.22, 'aggregation_pushdown_bias': 0.036, 'index_exploitation_bias': 0.272, 'partition_elimination_bias': 0.277}
+[13:49:23.321] 🔍 DEBUG | agent                | [Agent 098a0f38] Instructions (2 items):
+[13:49:23.321] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:49:23.322] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:49:23.322] ℹ️  INFO  | agent                | [Agent 098a0f38] generation_context provided — feedback loop active
+[13:49:23.323] 🔍 DEBUG | agent                | [Agent 098a0f38] Prompt built (5307 chars)
+[13:49:23.323] 🔍 DEBUG | agent                | [Agent 098a0f38] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +15.56% improvement (113.57s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - WHERE MI.[table] = 'sn_customerservice_case'
+    - AND MI.[field] = 'state'
+    - AND (
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+    + AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    + INNER JOIN ODS.SN_METRIC_INSTANCE MI
+❌ These approaches did NOT help — avoid repeating them:
+  - Join Optimizer (made query slower: 143.7s)
+  - Shuffle Avoider (EXECUTION_FAILED)
+  - Partition Eliminator (made query slower: 233.8s)
+  - Join Optimizer (made query slower: 153.4s)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:49:23.341] ℹ️  INFO  | agent                | [Agent 098a0f38] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:49:26.657] ℹ️  INFO  | agent                | [Agent 098a0f38] LLM responded in 3.32s
+[13:49:26.657] 🔍 DEBUG | agent                | [Agent 098a0f38] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:26.660] 🔍 DEBUG | agent                | [Agent 098a0f38] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:26.662] ℹ️  INFO  | agent                | [Agent 098a0f38] generate_rewrite() SUCCESS
+[13:49:26.663] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:49:26.663] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:26.664] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:26.665] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:49:26.665] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:49:26.666] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:49:26.666] 🔍 DEBUG | safety               | Schema validation passed
+[13:49:26.667] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:49:26.686] ℹ️  INFO  | agent                | [Agent a91df6b3] generate_rewrite() START — strategy=Join Optimizer
+[13:49:26.688] 🔍 DEBUG | agent                | [Agent a91df6b3] Genome values: {'predicate_pushdown_bias': 0.133, 'shuffle_avoidance_bias': 0.353, 'broadcast_tolerance': 0.161, 'join_reorder_weight': 0.938, 'temp_table_materialization_bias': 0.338, 'aggregation_pushdown_bias': 0.267, 'index_exploitation_bias': 0.038, 'partition_elimination_bias': 0.362}
+[13:49:26.691] 🔍 DEBUG | agent                | [Agent a91df6b3] Instructions (2 items):
+[13:49:26.691] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:49:26.694] 🔍 DEBUG | agent                |   2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:49:26.696] ℹ️  INFO  | agent                | [Agent a91df6b3] generation_context provided — feedback loop active
+[13:49:26.697] 🔍 DEBUG | agent                | [Agent a91df6b3] Prompt built (5307 chars)
+[13:49:26.698] 🔍 DEBUG | agent                | [Agent a91df6b3] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +15.56% improvement (113.57s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - WHERE MI.[table] = 'sn_customerservice_case'
+    - AND MI.[field] = 'state'
+    - AND (
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+    + AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    + INNER JOIN ODS.SN_METRIC_INSTANCE MI
+❌ These approaches did NOT help — avoid repeating them:
+  - Join Optimizer (made query slower: 143.7s)
+  - Shuffle Avoider (EXECUTION_FAILED)
+  - Partition Eliminator (made query slower: 233.8s)
+  - Join Optimizer (made query slower: 153.4s)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:49:26.717] ℹ️  INFO  | agent                | [Agent a91df6b3] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:49:29.493] ℹ️  INFO  | agent                | [Agent a91df6b3] LLM responded in 2.78s
+[13:49:29.493] 🔍 DEBUG | agent                | [Agent a91df6b3] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:29.496] 🔍 DEBUG | agent                | [Agent a91df6b3] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:29.497] ℹ️  INFO  | agent                | [Agent a91df6b3] generate_rewrite() SUCCESS
+[13:49:29.497] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:49:29.498] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:29.498] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:29.500] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:49:29.500] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:49:29.500] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:49:29.500] 🔍 DEBUG | safety               | Schema validation passed
+[13:49:29.501] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:49:29.512] ℹ️  INFO  | agent                | [Agent 1e161ade] generate_rewrite() START — strategy=Join Optimizer
+[13:49:29.512] 🔍 DEBUG | agent                | [Agent 1e161ade] Genome values: {'predicate_pushdown_bias': 0.06, 'shuffle_avoidance_bias': 0.304, 'broadcast_tolerance': 0.0, 'join_reorder_weight': 1.0, 'temp_table_materialization_bias': 0.214, 'aggregation_pushdown_bias': 0.399, 'index_exploitation_bias': 0.03, 'partition_elimination_bias': 0.417}
+[13:49:29.513] 🔍 DEBUG | agent                | [Agent 1e161ade] Instructions (3 items):
+[13:49:29.513] 🔍 DEBUG | agent                |   1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+[13:49:29.514] 🔍 DEBUG | agent                |   2. ⚖️ MODERATE: Look for partition elimination opportunities
+[13:49:29.514] 🔍 DEBUG | agent                |   3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+[13:49:29.515] ℹ️  INFO  | agent                | [Agent 1e161ade] generation_context provided — feedback loop active
+[13:49:29.516] 🔍 DEBUG | agent                | [Agent 1e161ade] Prompt built (5368 chars)
+[13:49:29.516] 🔍 DEBUG | agent                | [Agent 1e161ade] Full prompt:
+============================================================
+You are optimizing a slow Azure Synapse SQL query.
+
+ORIGINAL QUERY:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM ODS.SN_METRIC_INSTANCE MI
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+    WHERE MI.[table] = 'sn_customerservice_case'
+      AND MI.[field] = 'state'
+      AND (
+            CSC.[sys_created_on] IS NULL
+            OR CAST(CSC.[sys_created_on] AS DATETIME) >= (
+                SELECT Param2
+                FROM OPS_0_MTA.CTRL_TABLE
+                WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+                  AND ISACTIVE = 'TRUE'
+            )
+      )
+      AND CAST(CSC.[sys_created_on] AS DATETIME) < (
+            SELECT DATEADD(YEAR, 10, Param2)
+            FROM OPS_0_MTA.CTRL_TABLE
+            WHERE PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+              AND ISACTIVE = 'TRUE'
+      )
+)
+SELECT *
+FROM PrepareData;
+
+BASELINE PERFORMANCE:
+- Execution Time  : 134.5066578388214 seconds
+- Broadcast Ops   : 3
+- Full Table Scans: 4
+- Shuffle Ops     : 2
+
+SCHEMA METADATA (DO NOT REMOVE SCHEMA NAMES):
+Schema Metadata (3 table(s) referenced in your query):
+
+Table: SN_CUSTOMERSERVICE_CASE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_0f125d3ebaff4aa6b096ef4d03407601 (CLUSTERED)
+
+Table: SN_METRIC_INSTANCE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_28c8c32a0fac4ce3ac54e151707eab3a (CLUSTERED)
+
+Table: CTRL_TABLE
+  Distribution: ROUND_ROBIN
+  Partition Count: 1
+  Indexes:
+    - ClusteredIndex_36f4588d31ab488d9f3c76073e61ac86 (CLUSTERED COLUMNSTORE)
+
+
+⚠️  MANDATORY: These schema prefixes MUST appear in your output: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+
+============================================================
+LEARNING FROM PREVIOUS GENERATION:
+✅ Best approach last gen: 'Join Optimizer' — achieved +15.56% improvement (113.57s)
+What it changed (build on this, don't just copy it):
+  Removed:
+    - FROM ODS.SN_METRIC_INSTANCE MI
+    - WHERE MI.[table] = 'sn_customerservice_case'
+    - AND MI.[field] = 'state'
+    - AND (
+  Added:
+    + FROM OPS_0_MTA.CTRL_TABLE CT
+    + ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+    + AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    + INNER JOIN ODS.SN_METRIC_INSTANCE MI
+❌ These approaches did NOT help — avoid repeating them:
+  - Join Optimizer (made query slower: 143.7s)
+  - Shuffle Avoider (EXECUTION_FAILED)
+  - Partition Eliminator (made query slower: 233.8s)
+  - Join Optimizer (made query slower: 153.4s)
+
+BEST SQL FROM PREVIOUS GENERATION (improve on this):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[id] = CSC.[sys_id]
+        AND MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+============================================================
+
+YOUR OPTIMIZATION STRATEGY (Apply in priority order):
+1. 🔥 CRITICAL PRIORITY: Reorder joins to put smallest table first, largest last
+2. ⚖️ MODERATE: Look for partition elimination opportunities
+3. 🚫 AVOID: Broadcasting tables — minimize replicate operations
+
+CRITICAL RULES:
+1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
+2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
+3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
+4. Output ONLY valid SQL — no explanations, no markdown, no comments
+5. Maintain exact result semantics — same rows, same columns, same order
+
+REWRITE THE QUERY NOW:
+
+============================================================
+[13:49:29.535] ℹ️  INFO  | agent                | [Agent 1e161ade] Calling OpenAI (model=gpt-4.1-mini, temp=0.4) …
+[13:49:32.617] ℹ️  INFO  | agent                | [Agent 1e161ade] LLM responded in 3.08s
+[13:49:32.617] 🔍 DEBUG | agent                | [Agent 1e161ade] Raw response (1262 chars):
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:32.619] 🔍 DEBUG | agent                | [Agent 1e161ade] Final SQL:
+WITH PrepareData AS (
+    SELECT
+          CSC.[sys_id]                    AS Customer_Service_Sys_ID
+        , CSC.[number]                    AS Customer_Service_Number
+        , CSC.[sys_created_on]            AS Customer_Service_Created_Date
+        , MI.[start]                      AS Created_Date
+        , MI.[field]                      AS Field
+        , MI.[dv_definition]              AS Definition
+        , MI.[value]                      AS Value
+        , CSC.[dv_u_site]                 AS Site
+        , CHARINDEX('.', CSC.[dv_u_site]) AS charindex_dot_in_site
+        , 1 + ROW_NUMBER() OVER (
+                PARTITION BY CSC.[sys_id]
+                ORDER BY MI.[start] ASC
+          ) AS [Index]
+    FROM OPS_0_MTA.CTRL_TABLE CT
+    INNER JOIN ODS.SN_METRIC_INSTANCE MI
+        ON MI.[table] = 'sn_customerservice_case'
+        AND MI.[field] = 'state'
+    INNER JOIN ODS.SN_CUSTOMERSERVICE_CASE CSC
+        ON MI.[id] = CSC.[sys_id]
+        AND (CSC.[sys_created_on] IS NULL OR CAST(CSC.[sys_created_on] AS DATETIME) >= CT.Param2)
+        AND CAST(CSC.[sys_created_on] AS DATETIME) < DATEADD(YEAR, 10, CT.Param2)
+    WHERE CT.PipelineName = 'OPS_4_DMT.OPS_FACT_CUSTOMER_DURATION'
+      AND CT.ISACTIVE = 'TRUE'
+)
+SELECT *
+FROM PrepareData;
+[13:49:32.621] ℹ️  INFO  | agent                | [Agent 1e161ade] generate_rewrite() SUCCESS
+[13:49:32.621] ℹ️  INFO  | safety               | SafetyGovernor.validate() called
+[13:49:32.621] 🔍 DEBUG | safety               | Required schemas: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:32.622] 🔍 DEBUG | safety               | Running schema validation — checking for: ['OPS_4_DMT', 'ODS', 'OPS_0_MTA']
+[13:49:32.622] 🔍 DEBUG | safety               |   Schema 'OPS_4_DMT' → present ✅
+[13:49:32.622] 🔍 DEBUG | safety               |   Schema 'ODS' → present ✅
+[13:49:32.623] 🔍 DEBUG | safety               |   Schema 'OPS_0_MTA' → present ✅
+[13:49:32.623] 🔍 DEBUG | safety               | Schema validation passed
+[13:49:32.623] ℹ️  INFO  | safety               | SafetyGovernor.validate() → SAFE ✅
+[13:55:12.520] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:55:12.520] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:55:12.520] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:55:12.520] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:55:12.520] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:55:13.512] 🔍 DEBUG | fitness              | compute() → 296.802s
+[13:55:13.512] 🔍 DEBUG | agent                | [Agent e894e694] actual_fitness = 296.802s
+[13:55:13.512] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=296.80s  → -120.66%
+[13:59:00.589] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[13:59:00.591] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[13:59:00.591] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[13:59:00.592] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[13:59:00.592] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[13:59:01.638] 🔍 DEBUG | fitness              | compute() → 161.614s
+[13:59:01.639] 🔍 DEBUG | agent                | [Agent 9e08d1d9] actual_fitness = 161.614s
+[13:59:01.639] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=161.61s  → -20.15%
+[14:02:03.618] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[14:02:03.634] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[14:02:03.634] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[14:02:03.634] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[14:02:03.634] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[14:02:04.668] 🔍 DEBUG | fitness              | compute() → 136.224s
+[14:02:04.669] 🔍 DEBUG | agent                | [Agent 098a0f38] actual_fitness = 136.224s
+[14:02:04.669] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=136.22s  → -1.28%
+[14:04:56.392] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[14:04:56.393] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[14:04:56.393] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[14:04:56.394] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[14:04:56.394] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[14:04:57.421] 🔍 DEBUG | fitness              | compute() → 126.006s
+[14:04:57.421] 🔍 DEBUG | agent                | [Agent a91df6b3] actual_fitness = 126.006s
+[14:04:57.422] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=126.01s  → 6.32%
+[14:14:29.459] ℹ️  INFO  | validator            | QueryValidator.validate() called
+[14:14:29.475] 🔍 DEBUG | validator            | Row count check: 5087357 == 5087357 ✅
+[14:14:29.475] 🔍 DEBUG | validator            | Column count check: 10 == 10 ✅
+[14:14:29.475] ⚠️  WARN  | validator            | Checksum validation SKIPPED (temporarily disabled — see TODO)
+[14:14:29.475] ℹ️  INFO  | validator            | QueryValidator.validate() → VALID ✅
+[14:14:32.429] 🔍 DEBUG | fitness              | compute() → 491.999s
+[14:14:32.429] 🔍 DEBUG | agent                | [Agent 1e161ade] actual_fitness = 491.999s
+[14:14:32.430] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=492.00s  → -265.78%
+[14:14:32.499] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=126.01s  → 6.32%
+[14:14:32.679] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=126.01s  → 6.32%
+[14:14:32.679] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=0.938  p1=Join Optimizer  p2=Join Optimizer
+[14:14:32.694] 🔍 DEBUG | genome               | Genome.mutate() changes: {'shuffle_avoidance_bias': '0.104 → 0.026', 'aggregation_pushdown_bias': '0.179 → 0.118', 'index_exploitation_bias': '0.098 → 0.725', 'partition_elimination_bias': '0.288 → 0.368'}  exploration=index_exploitation_bias
+[14:14:32.694] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[14:14:32.701] 🔍 DEBUG | agent                | Agent ad1af545 created | gen=4 | strategy=Join Optimizer | parents=['a91df6b3', '098a0f38']
+[14:14:32.702] 🔍 DEBUG | genome               | Genome.crossover() → dominant=Join Optimizer  inherited=join_reorder_weight=0.938  p1=Join Optimizer  p2=Join Optimizer
+[14:14:32.703] 🔍 DEBUG | genome               | Genome.mutate() changes: {'broadcast_tolerance': '0.265 → 0.327', 'join_reorder_weight': '0.938 → 0.861', 'temp_table_materialization_bias': '0.326 → 0.235', 'aggregation_pushdown_bias': '0.247 → 0.339', 'index_exploitation_bias': '0.129 → 0.043'}  exploration=None
+[14:14:32.703] 🔍 DEBUG | genome               |   new dominant=Join Optimizer
+[14:14:32.704] 🔍 DEBUG | agent                | Agent 196d3168 created | gen=4 | strategy=Join Optimizer | parents=['a91df6b3', '098a0f38']
+[14:14:32.705] 🔍 DEBUG | genome               | Genome.random() → specialist=partition_elimination_bias  values={'predicate_pushdown_bias': 0.331, 'shuffle_avoidance_bias': 0.256, 'broadcast_tolerance': 0.347, 'join_reorder_weight': 0.037, 'temp_table_materialization_bias': 0.037, 'aggregation_pushdown_bias': 0.284, 'index_exploitation_bias': 0.229, 'partition_elimination_bias': 0.892}
+[14:14:32.706] 🔍 DEBUG | agent                | Agent af451862 created | gen=4 | strategy=Partition Eliminator | parents=none (random)
+[14:14:32.709] 🔍 DEBUG | fitness              | improvement_percentage(): baseline=134.51s  candidate=126.01s  → 6.32%
