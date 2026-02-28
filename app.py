@@ -773,6 +773,10 @@ if st.session_state.get("is_running") and st.session_state.get("pending_sql"):
                           delta=f"{final_time - baseline_t:.2f}s vs baseline")
                 c2.metric("📈 Improvement",   f"{impr:+.2f}%")
                 c3.metric("🧬 Strategy",       update["winner_strategy"])
+                winner_plan = update.get("winner_plan", {})
+                if winner_plan:
+                    st.markdown("**📐 Winner Query Plan Shape:**")
+                    render_plan_metrics(winner_plan)
                 st.markdown("---")
                 show_sql_diff(sql_to_run, update.get("winning_sql") or sql_to_run)
 

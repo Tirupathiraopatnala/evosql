@@ -190,10 +190,18 @@ class Genome:
             elif value > mid_thresh:
                 instructions.append(mid_text)
 
+
         if self.broadcast_tolerance > 0.7:
-            instructions.append("✅ ALLOWED: Use REPLICATE hints for small dimension tables (< 10GB)")
+            instructions.append(
+                "✅ BROADCAST JOINS: Place small lookup/dimension tables on the inner side of joins "
+                "so Synapse can broadcast them. Use OPTION (HASH JOIN) hint where beneficial. "
+                "Do NOT use WITH (REPLICATE) — that is a table creation option, not a query hint."
+            )
         elif self.broadcast_tolerance < 0.3:
-            instructions.append("🚫 AVOID: Broadcasting tables — minimize replicate operations")
+            instructions.append(
+                "🚫 AVOID BROADCAST: Minimize broadcast join patterns — "
+                "restructure joins to use hash-distributed keys instead"
+            )
 
         if not instructions:
             log.warning(
@@ -204,6 +212,27 @@ class Genome:
         return instructions
 
     # --------------------------------------------------
+
+    def to_one_liner(self) -> str:
+        """
+        One-sentence plain-English explanation of what this agent will try.
+        Shown in the UI so non-technical viewers understand the strategy.
+        """
+        strategy = self.get_dominant_strategy()
+        dominant_val = max(self.__dict__.values())
+        descriptions = {
+            "Predicate Pusher":     "Moves WHERE filters before JOINs to shrink data early",
+            "Shuffle Avoider":      "Rewrites joins to align with distribution keys, cutting data movement",
+            "Broadcast User":       "Restructures joins so small tables are on the broadcast side",
+            "Join Optimizer":       "Reorders joins smallest-table-first to reduce intermediate row counts",
+            "Temp Table Creator":   "Materialises expensive subqueries into temp tables to avoid recomputation",
+            "Aggregation Pusher":   "Pushes GROUP BY / SUM as close to base tables as possible",
+            "Index Exploiter":      "Rewrites predicates to avoid functions on columns, enabling index use",
+            "Partition Eliminator": "Adds partition-column filters to skip irrelevant partitions",
+        }
+        desc = descriptions.get(strategy, "Applies general SQL optimisation techniques")
+        return f"{strategy} ({dominant_val:.2f}) — {desc}"
+
     def get_dominant_strategy(self) -> str:
         traits = {
             "Predicate Pusher":      self.predicate_pushdown_bias,

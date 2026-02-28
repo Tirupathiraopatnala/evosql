@@ -211,8 +211,9 @@ CRITICAL RULES:
 1. ⚠️  PRESERVE ALL SCHEMA NAMES — never remove schema prefixes from table names
 2. ⚠️  PRESERVE CROSS APPLY — never convert CROSS APPLY to CROSS JOIN (they are different operations)
 3. ⚠️  PRESERVE CTEs — keep all WITH (...) AS (...) blocks intact, only optimize inside them
-4. Output ONLY valid SQL — no explanations, no markdown, no comments
-5. Maintain exact result semantics — same rows, same columns, same order
+4. ⚠️  PRESERVE TOP N — the original query uses " + top_n_clause + ", your rewrite MUST also include " + top_n_clause + " on the final SELECT" if top_n_clause else "Do NOT add TOP N unless it was in the original query
+5. Output ONLY valid SQL — no explanations, no markdown, no comments
+6. Maintain exact result semantics — same rows, same columns, same order
 
 REWRITE THE QUERY NOW:
 """
