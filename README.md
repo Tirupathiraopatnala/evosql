@@ -204,6 +204,8 @@ FROM fact_sales f
 JOIN dim_product p ON f.product_id = p.product_id
 WHERE p.category = 'Electronics'
   AND f.order_date >= '2023-01-01'
+```
+---
 
 ## ⚠️ Known Limitations
 
