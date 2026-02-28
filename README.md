@@ -113,8 +113,8 @@ evosql/
 ### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/dataforge-ai/autonomous-data-agent
-cd autonomous-data-agent
+git clone https://github.com/Tirupathiraopatnala/evosql.git
+cd evosql
 ```
 
 ### 2️⃣ Create Virtual Environment
