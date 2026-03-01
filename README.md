@@ -86,19 +86,24 @@ The system:
 
 ## 📂 Project Structure
 ```
-evosql/
-├── agent.py
-├── app.py
-├── debug_logger.py
-├── evolution.py
-├── evosql_debug.log
-├── fitness.py
-├── genome.py
-├── requirements.txt
-├── safety.py
-├── schema_extractor.py
-├── synapse_client.py
-└── validator.py
+evosql/                         
+├── app.py                   — Streamlit UI, main event loop
+├── app-bkp.py               — Backup of app.py (identical header)
+├── evolution.py             — Evolution engine, generations, reproduction
+├── evolution-backup.py      — Backup of evolution.py (identical header)
+├── agent.py                 — StrategyAgent: LLM rewrite, fitness tracking
+├── genome.py                — Genome: 8 traits, specialist init, crossover, mutation
+├── synapse_client.py        — Synapse connection, execute, EXPLAIN, checksum
+├── schema_extractor.py      — Distribution/index/partition metadata extraction
+├── safety.py                — Forbidden keywords, schema preservation checks
+├── validator.py             — Row count, column count, checksum validation
+├── debug_logger.py          — Centralized logger with file + terminal output
+├── fitness.py               — Fitness = execution_time (seconds), penalty=99999
+├── requirements.txt         — 6 deps (streamlit, pyodbc, pandas, openai, httpx, dotenv)
+├── .env.example             — Template for Azure OpenAI + Synapse credentials
+├── README.md                — Full docs: architecture, setup, flow
+└── evosql_debug.log         — Runtime debug log (auto-generated)
+
 ```
 ---
 
