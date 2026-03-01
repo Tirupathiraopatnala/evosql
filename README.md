@@ -1,4 +1,4 @@
-# 🧬 EvoSQL: Self‑Evolving SQL Query Optimizer
+# 🧬 EvoSQL: Self‑Evolving Agentic SQL Query Optimizer
 
 ## 👥 Team Details
 
